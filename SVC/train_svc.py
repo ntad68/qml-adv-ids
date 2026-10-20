@@ -1,9 +1,17 @@
-import os, random
+import os, random, argparse
 import numpy as np
-import tensorflow as tf
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")  # Chạy không cần màn hình (terminal/HPC)
 
-df = pd.read_csv('data_set_path')
+parser = argparse.ArgumentParser(description="Huấn luyện LinearSVC trên 8 đặc trưng tỷ lệ")
+parser.add_argument('--train_csv', type=str, required=True, help="File train 8 đặc trưng + Attack_label (vd: data/raw/train_500_seed42.csv)")
+parser.add_argument('--scaler_out', type=str, default="scaler_svc.pkl")
+parser.add_argument('--model_out', type=str, default="model_svc.pkl")
+parser.add_argument('--roc_out', type=str, default="roc_svc_train.png")
+args = parser.parse_args()
+
+df = pd.read_csv(args.train_csv)
 
 from sklearn.model_selection import train_test_split
 
@@ -35,7 +43,7 @@ scaler = StandardScaler()
 x_train = scaler.fit_transform(x_train)
 x_valid = scaler.transform(x_valid)
 x_test  = scaler.transform(x_test)
-joblib.dump(scaler, "scaler_aic_1k-seed42.pkl")
+joblib.dump(scaler, args.scaler_out)
 
 
 from sklearn.svm import LinearSVC
@@ -96,8 +104,9 @@ plt.title('ROC Curve')
 plt.legend(loc="lower right")
 plt.grid(alpha=0.3)
 
-plt.show()
+plt.savefig(args.roc_out)
+plt.close()
 
 import joblib
 
-joblib.dump(svm_model, "model_svc.pkl")
+joblib.dump(svm_model, args.model_out)

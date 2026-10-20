@@ -17,6 +17,7 @@ import dill # Them vao dau file
 import numpy as np
 import pandas as pd
 from qiskit_machine_learning.algorithms import QSVC
+from precompute import create_quantum_kernel
 
 # Cau hinh Logging mac dinh (Tieng Viet khong dau de tuong thich Slurm)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -29,7 +30,7 @@ def main():
     args = parser.parse_args()
 
     # Thiet lap cac duong dan tuong doi
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     train_csv_path = os.path.join(base_dir, "data", "train", args.dataset_train)
     checkpoint_dir = os.path.join(base_dir, "checkpoints", args.version_name)
     kernel_train_path = os.path.join(checkpoint_dir, "kernel_train.npy")
@@ -71,8 +72,9 @@ def main():
     # 3. Huan luyen mo hinh QSVC
     logging.info(f"Khoi tao QSVC (C={args.c_param}) va bypass loi Qiskit 0.8.2")
     
-    # Buoc 1: Khoi tao QSVC mac dinh de tranh loi .evaluate cua Qiskit
-    qsvc = QSVC(C=args.c_param, random_state = 42) 
+    # Buoc 1: Khoi tao QSVC voi kernel luong tu giong precompute.py
+    # (qiskit-machine-learning >= 0.9 khong cho phep quantum_kernel=None; kernel nay khong duoc goi khi fit)
+    qsvc = QSVC(C=args.c_param, random_state=42, quantum_kernel=create_quantum_kernel())
     
     # Buoc 2: Ep truc tiep kernel cua class Scikit-learn cha thanh precomputed
     qsvc.kernel = "precomputed"

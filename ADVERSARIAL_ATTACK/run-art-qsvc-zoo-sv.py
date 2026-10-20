@@ -99,7 +99,7 @@ def main():
     args = parser.parse_args()
 
     # Thiet lap duong dan
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     train_csv_path = os.path.join(base_dir, "data", "train", args.dataset_train)
     test_csv_path = os.path.join(base_dir, "data", "test", args.dataset_test)
     run_dir = os.path.join(base_dir, "runs", "checkpoint-test", args.version_name)

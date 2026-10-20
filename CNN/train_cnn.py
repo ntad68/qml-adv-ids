@@ -1,9 +1,19 @@
-import os, random
+import os, random, argparse
 import numpy as np
 import tensorflow as tf
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")  # Chạy không cần màn hình (terminal/HPC)
 
-df = pd.read_csv('dataset_path')
+parser = argparse.ArgumentParser(description="Huấn luyện 1D-CNN trên 8 đặc trưng tỷ lệ")
+parser.add_argument('--train_csv', type=str, required=True, help="File train 8 đặc trưng + Attack_label (vd: data/raw/train_500_seed42.csv)")
+parser.add_argument('--scaler_out', type=str, default="scaler_cnn.pkl")
+parser.add_argument('--model_out', type=str, default="model_cnn.keras")
+parser.add_argument('--history_out', type=str, default="history_cnn.png")
+parser.add_argument('--roc_out', type=str, default="roc_cnn_train.png")
+args = parser.parse_args()
+
+df = pd.read_csv(args.train_csv)
 from sklearn.model_selection import train_test_split
 
 X = df.drop(columns=['Attack_label'])
@@ -41,7 +51,7 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(x_train)
 X_valid = scaler.transform(x_valid)
 X_test  = scaler.transform(x_test)
-joblib.dump(scaler, "scaler_aic_check_1k_seed0.pkl")
+joblib.dump(scaler, args.scaler_out)
 print(X_train.shape)
 
 
@@ -55,7 +65,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 model_cnn = keras.Sequential([
-    layers.Conv1D(filters = 16,kernel_size = 3,activation = 'relu',padding = 'same',input_shape = input_shape),
+    layers.Conv1D(filters = 16,kernel_size = 3,activation = 'relu',padding = 'same',input_shape = (X_train.shape[1], 1)),
     layers.MaxPooling1D(),
     layers.Conv1D(filters = 32,kernel_size = 3,activation = 'relu',padding = 'same'),
     layers.MaxPooling1D(),
@@ -120,7 +130,11 @@ plt.plot(history_df['val_binary_accuracy'], label='Val Acc')
 plt.title('Accuracy')
 plt.legend()
 
-plt.show()
+plt.savefig(args.history_out)
+plt.close()
+
+# Lưu mô hình để test_CNN.py nạp lại
+model_cnn.save(args.model_out)
 
 y_prob = model_cnn.predict(X_test) 
 
@@ -168,5 +182,6 @@ plt.title('ROC Curve')
 plt.legend(loc="lower right")
 plt.grid(alpha=0.3)
 
-plt.show()
+plt.savefig(args.roc_out)
+plt.close()
 

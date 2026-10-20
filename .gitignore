@@ -28,3 +28,10 @@ env/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Du lieu sinh ra tu data_preparation/ va cac buoc preprocess
+data/
+
+# Mo hinh / bieu do sinh ra khi chay pipeline
+*.keras
+*.png

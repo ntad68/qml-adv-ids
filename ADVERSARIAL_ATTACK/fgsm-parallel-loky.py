@@ -137,7 +137,7 @@ def main():
     parser.add_argument('--test_size', type=int, default=1000)
     args = parser.parse_args()
 
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     train_csv_path = os.path.join(base_dir, "data", "train", args.dataset_train)
     test_csv_path = os.path.join(base_dir, "data", "test", args.dataset_test)
     run_dir = os.path.join(base_dir, "runs", "checkpoint-test", args.version_name)

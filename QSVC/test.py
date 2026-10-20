@@ -34,7 +34,7 @@ def main():
     args = parser.parse_args()
 
     # Thiet lap cac duong dan
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     test_csv_path = os.path.join(base_dir, "data", "test", args.dataset_test)
     checkpoint_dir = os.path.join(base_dir, "checkpoints", args.version_name)
     kernel_test_path = os.path.join(checkpoint_dir, "kernel_test.npy")

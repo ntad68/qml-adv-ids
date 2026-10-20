@@ -83,6 +83,10 @@ def main():
     parser.add_argument('--log_file', type=str, required=True)
     args = parser.parse_args()
 
+    # Tạo thư mục cho file log và file .npy nếu chưa có
+    for path in (args.log_file, args.output_npy):
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+
     logging.basicConfig(
         level=logging.INFO, 
         format='%(asctime)s - %(message)s',
@@ -92,7 +96,7 @@ def main():
         ]
     )
 
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     model_path = os.path.join(base_dir, "runs", "checkpoint-test", args.version_name, "model.dill")
     
     logging.info(f"[*] He thong Slurm dang cap phat: {NUM_CORES} CPU Cores.")
@@ -116,7 +120,7 @@ def main():
 
     q_kernel = FidelityQuantumKernel(
         fidelity=ComputeUncompute(sampler=StatevectorSampler(seed=42)),
-        feature_map=ZZFeatureMap(X_train.shape[1], reps=2)
+        feature_map=ZZFeatureMap(X_train.shape[1], reps=2, entanglement='linear')
     )
     classifier = QSVC_ART_Classifier(qsvc_model, q_kernel, X_train, X_train.shape[1])
 

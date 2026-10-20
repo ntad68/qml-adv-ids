@@ -1,8 +1,5 @@
-!pip install qiskit qiskit-machine-learning scikit-learn
-!pip install qiskit-algorithms
-!pip install pylatexenc
-!pip install imbalanced-learn
-
+import os
+import argparse
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -14,12 +11,16 @@ from qiskit.primitives import StatevectorSampler
 from qiskit_machine_learning.neural_networks import SamplerQNN
 from qiskit_machine_learning.algorithms import NeuralNetworkClassifier
 
-from qiskit_algorithms.optimizers import COBYLA
 
-
+# --- 0. Tham số dòng lệnh ---
+parser = argparse.ArgumentParser(description="Huấn luyện QCNN (ZZFeatureMap + Conv/Pool) với SPSA")
+parser.add_argument('--train_csv', type=str, required=True, help="File train đã qua preprocess_data_qcnn.py (4 đặc trưng [0, π] + Attack_label)")
+parser.add_argument('--model_out', type=str, default="qcnn_model.pkl", help="Đường dẫn lưu mô hình (.pkl, dill)")
+parser.add_argument('--maxiter', type=int, default=200, help="Số vòng lặp SPSA (bài báo dùng 200)")
+args = parser.parse_args()
 
 # --- 1. Load Data ---
-df = pd.read_csv("/kaggle/input/datasets/tuankietquach/qcnn-2k-lan2-5/2000_train_aic_remake4quantum_seed_0 (1).csv")
+df = pd.read_csv(args.train_csv)
 X = df.drop(columns=["Attack_label"]).values
 y = df["Attack_label"].values
 
@@ -84,15 +85,10 @@ ansatz.ry(theta[58], 0); ansatz.rz(theta[59], 0)
 qc = feature_map.compose(ansatz)
 print(f"Tổng tham số mạch: {len(qc.parameters)}") # Sẽ là 64 (4 x + 60 θ)# 3. Kết hợp mạch
 
-# Vẽ mạch để kiểm tra cấu trúc "ZZ + Conv + Pool"
-qc.draw("mpl")
-
-import numpy as np
+import matplotlib
+matplotlib.use("Agg")  # Chạy không cần màn hình (terminal/HPC)
 import matplotlib.pyplot as plt
-from qiskit_machine_learning.algorithms import NeuralNetworkClassifier
 from qiskit_algorithms.optimizers import SPSA
-from IPython.display import clear_output
-import matplotlib.pyplot as plt
 
 from qiskit_machine_learning.neural_networks import SamplerQNN
 from qiskit.primitives import StatevectorSampler
@@ -128,29 +124,13 @@ def callback_graph(nfev, weights, obj_func_eval, stepsize, accepted):
     4. stepsize: Kích thước bước nhảy của thuật toán
     5. accepted: Bước nhảy có được chấp nhận hay không
     """
-    clear_output(wait=True)
     objective_func_vals.append(obj_func_eval)
-    
-    plt.figure(figsize=(10, 5))
-    plt.title(f"Huấn luyện QCNN với SPSA - Bước thứ {len(objective_func_vals)}")
-    plt.xlabel("Iteration")
-    plt.ylabel("Loss (Hàm mục tiêu)")
-    
-    # Vẽ đường Loss
-    plt.plot(range(len(objective_func_vals)), objective_func_vals, 
-             color='tab:red', label='Current Loss', marker='o', markersize=2)
-    
-    # In giá trị Loss hiện tại lên biểu đồ để dễ theo dõi
-    plt.text(len(objective_func_vals)-1, obj_func_eval, f"{obj_func_eval:.4f}")
-    
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.6)
-    plt.show()
+    print(f"[SPSA] Bước {len(objective_func_vals)} - Loss: {obj_func_eval:.4f}", flush=True)
 
 # Khởi tạo Optimizer và Initial Point
 # Khởi tạo Optimizer SPSA đúng chuẩn Qiskit
 optimizer = SPSA(
-    maxiter=200,           # Tăng thời gian để các tập dữ liệu "khó" kịp hội tụ
+    maxiter=args.maxiter,  # Tăng thời gian để các tập dữ liệu "khó" kịp hội tụ
     blocking=True,         # Tuyệt đối giữ True để đường Loss không bị nhảy ngược
     resamplings=5,         # Tăng lên 5 để lọc nhiễu cực tốt cho tập 500 mẫu
     learning_rate=None,    # ĐỂ TỰ ĐỘNG: SPSA sẽ tự tính toán bước nhảy phù hợp cho từng Seed
@@ -185,11 +165,21 @@ print("Bắt đầu huấn luyện QCNN với ZZFeatureMap...")
 classifier.fit(X_train, y_train)
 print("Huấn luyện hoàn tất!")
 
-
+# Lưu đường Loss ra file thay vì hiển thị trực tiếp
+plt.figure(figsize=(10, 5))
+plt.title("Huấn luyện QCNN với SPSA")
+plt.xlabel("Iteration")
+plt.ylabel("Loss (Hàm mục tiêu)")
+plt.plot(range(len(objective_func_vals)), objective_func_vals, color='tab:red', marker='o', markersize=2)
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.savefig(os.path.splitext(args.model_out)[0] + "_loss.png")
+plt.close()
 
 import dill
-with open("qcnn_model.pkl", "wb") as f:
+os.makedirs(os.path.dirname(os.path.abspath(args.model_out)), exist_ok=True)
+with open(args.model_out, "wb") as f:
     dill.dump(classifier, f)
+print(f"Đã lưu mô hình: {args.model_out}")
 
 from sklearn.metrics import roc_auc_score
 

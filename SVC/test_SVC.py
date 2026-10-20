@@ -1,13 +1,24 @@
+import argparse
 import pandas as pd
 import numpy as np
-df = pd.read_csv("test_path")
+import matplotlib
+matplotlib.use("Agg")  # Chạy không cần màn hình (terminal/HPC)
+
+parser = argparse.ArgumentParser(description="Đánh giá LinearSVC trên tập test sạch")
+parser.add_argument('--test_csv', type=str, required=True, help="File test 8 đặc trưng + Attack_label (vd: data/raw/test_full.csv)")
+parser.add_argument('--scaler_path', type=str, required=True)
+parser.add_argument('--model_path', type=str, required=True)
+parser.add_argument('--roc_out', type=str, default="roc_svc_test.png")
+args = parser.parse_args()
+
+df = pd.read_csv(args.test_csv)
 
 features = [  'FDiR', 'FPR', 'FDuR',
     'FPRR', 'FITR', 'FPLR', 'FLRR', 'FTRLR' ]
 
 import joblib
 
-scaler = joblib.load("scaler_of_svc_path")
+scaler = joblib.load(args.scaler_path)
 
 from sklearn.preprocessing import StandardScaler,RobustScaler
 import joblib
@@ -17,13 +28,7 @@ y = df["Attack_label"]
 
 X_scaled = scaler.transform(X)
 
-import tensorflow as tf
-import numpy as np
-import joblib
-
-svm_model = joblib.load(
-    "/kaggle/input/datasets/tuankietquach/svm-2k-cuoicung/svm_aci_iot_2k_seed42.pkl"
-)
+svm_model = joblib.load(args.model_path)
 
 y_score = svm_model.decision_function(X_scaled)
 
@@ -60,4 +65,5 @@ plt.title('ROC Curve')
 plt.legend(loc="lower right")
 plt.grid(alpha=0.3)
 
-plt.show()
+plt.savefig(args.roc_out)
+plt.close()

@@ -1,16 +1,17 @@
-!pip install dill
-!pip install qiskit qiskit-machine-learning qiskit-algorithms pylatexenc
-
-
+import argparse
 import dill
 import pandas as pd
 import numpy as np
 from sklearn.metrics import (roc_auc_score, confusion_matrix, f1_score,  classification_report, precision_score, recall_score, accuracy_score) 
+parser = argparse.ArgumentParser(description="Đánh giá QCNN trên tập test sạch")
+parser.add_argument('--model_path', type=str, required=True, help="File mô hình .pkl sinh ra bởi train_qcnn.py")
+parser.add_argument('--test_csv', type=str, required=True, help="File test đã qua preprocess_test_qcnn.py")
+args = parser.parse_args()
+
 # =========================
 # 1. Load QCNN model
 # =========================
-model_path = "/kaggle/input/datasets/tuankietquach/qcnn-2k-seed42-2reps/qcnn_heavy_model (83).pkl"
-with open(model_path, "rb") as f:
+with open(args.model_path, "rb") as f:
     classifier = dill.load(f)
 
 print("Model loaded")
@@ -18,8 +19,7 @@ print("Model loaded")
 # =========================
 # 2. Load dataset test
 # =========================
-data_path = "/kaggle/input/datasets/tuankietquach/qcnn-data-new0pi/2000_test_aic_ (1).csv"
-df_test = pd.read_csv(data_path)
+df_test = pd.read_csv(args.test_csv)
 
 # Đảm bảo bỏ đúng cột label, kiểm tra lại tên cột "Attack_label"
 X_test = df_test.drop(columns=["Attack_label"]).values

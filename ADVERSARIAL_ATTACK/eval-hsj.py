@@ -84,7 +84,7 @@ def main():
 
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s', stream=sys.stdout)
     
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     model_path = os.path.join(base_dir, "runs", "checkpoint-test", args.version_name, "model.dill")
     
     logging.info(f"[*] Dang tai mo hinh: {model_path}")
@@ -124,7 +124,7 @@ def main():
     # Khởi tạo Classifier đa luồng
     q_kernel = FidelityQuantumKernel(
         fidelity=ComputeUncompute(sampler=StatevectorSampler(seed=42)),
-        feature_map=ZZFeatureMap(X_train.shape[1], reps=2)
+        feature_map=ZZFeatureMap(X_train.shape[1], reps=2, entanglement='linear')
     )
     classifier = QSVC_ART_Classifier(qsvc_model, q_kernel, X_train, X_train.shape[1])
 
@@ -163,6 +163,7 @@ def main():
     }
     
     df_res = pd.DataFrame([res_dict])
+    os.makedirs(os.path.dirname(os.path.abspath(args.output_csv)), exist_ok=True)
     df_res.to_csv(args.output_csv, index=False)
     
     logging.info("=========================================")

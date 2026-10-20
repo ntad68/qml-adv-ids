@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import gc
 import os
+import argparse
 from sklearn.metrics import recall_score, accuracy_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 
@@ -26,10 +27,14 @@ from qiskit.circuit.library import ZZFeatureMap
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 art.config.progress_bar = False
 
-# ÄÆ¯á»œNG DáºªN OUTPUT KIá»†T YÃŠU Cáº¦U
-OUTPUT_DIR = "/datastore/inseclab/quach_kiet/qcnn_ids/experiments/v1/art-result"
-if not os.path.exists(OUTPUT_DIR):
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+# Tham so dong lenh thay cho duong dan cung tren HPC
+parser = argparse.ArgumentParser(description="Tan cong doi khang (FGSM, PGD, ZOO, HSJ) len QCNN")
+parser.add_argument('--model_path', type=str, required=True, help="File mo hinh .pkl sinh ra boi QCNN/train_qcnn.py")
+parser.add_argument('--test_csv', type=str, required=True, help="File test da qua QCNN/preprocess_test_qcnn.py")
+parser.add_argument('--output_csv', type=str, default="adversarial_results_qcnn.csv")
+parser.add_argument('--test_size', type=int, default=1000, help="So mau stratified dung de tan cong (bai bao dung 1000)")
+args = parser.parse_args()
+os.makedirs(os.path.dirname(os.path.abspath(args.output_csv)), exist_ok=True)
 # ==========================================================
 # 3. ÐINH NGHIA MACH QCNN 
 # ==========================================================
@@ -71,14 +76,11 @@ def create_qcnn_circuit(n_qubits=4):
 # 4. LOAD MODEL & FULL DATA
 # ==========================================================
 print(">>> Loading QCNN model & Full Test Data...")
-QCNN_MODEL_PATH = "/datastore/inseclab/quach_kiet/qcnn_ids/experiments/v1/model/qcnn_hur_model_1k_s42.pkl"
-DATA_PATH = "/datastore/inseclab/quach_kiet/qcnn_ids/data/test/1000_test_aic_ (1).csv"
-
-df_full = pd.read_csv(DATA_PATH)
+df_full = pd.read_csv(args.test_csv)
 y_test_full = df_full['Attack_label'].values
 X_test_full = df_full.drop(columns=['Attack_label']).values.astype(np.float32)
 
-with open(QCNN_MODEL_PATH, "rb") as f:
+with open(args.model_path, "rb") as f:
     model_raw = dill.load(f)
 
 # ==========================================================
@@ -117,10 +119,10 @@ classifier = QiskitARTClassifier(model=model_raw)
 # ==========================================================
 # 6. Táº O Táº¬P SUBSET 1000 MáºªU
 # ==========================================================
-print("\n>>> Preparing Subset 1000...")
+print(f"\n>>> Preparing Subset {args.test_size}...")
 _, X_sub, _, y_sub = train_test_split(
     X_test_full, y_test_full, 
-    test_size=1000, 
+    test_size=args.test_size, 
     stratify=y_test_full, 
     random_state=42
 )
@@ -204,6 +206,6 @@ print("\n" + "="*90)
 print(df_res.to_string(index=False))
 
 # LÆ¯U FILE
-final_path = os.path.join(OUTPUT_DIR, "adversarial_results_qcnn_1k_seed42_hur.csv")
+final_path = args.output_csv
 df_res.to_csv(final_path, index=False)
 print(f"\n>>> File saved to: {final_path}")

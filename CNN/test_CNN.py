@@ -1,17 +1,28 @@
+import argparse
 import pandas as pd
 import numpy as np
-df = pd.read_csv("test_path")
+import matplotlib
+matplotlib.use("Agg")  # Chạy không cần màn hình (terminal/HPC)
+
+parser = argparse.ArgumentParser(description="Đánh giá 1D-CNN trên tập test sạch")
+parser.add_argument('--test_csv', type=str, required=True, help="File test 8 đặc trưng + Attack_label (vd: data/raw/test_full.csv)")
+parser.add_argument('--scaler_path', type=str, required=True)
+parser.add_argument('--model_path', type=str, required=True)
+parser.add_argument('--roc_out', type=str, default="roc_cnn_test.png")
+args = parser.parse_args()
+
+df = pd.read_csv(args.test_csv)
 
 features = [  'FDiR', 'FPR', 'FDuR',
     'FPRR', 'FITR', 'FPLR', 'FLRR', 'FTRLR' ]
 
 import joblib
 
-scaler = joblib.load("scaler_of_model_cnn_path")
+scaler = joblib.load(args.scaler_path)
 
 from sklearn.preprocessing import StandardScaler,RobustScaler
 import joblib
-X = df[features]
+X = df[features].copy()
 y = df["Attack_label"]
 
 log_features = ['FPR', 'FPLR', 'FTRLR','FLRR','FDiR']
@@ -19,15 +30,14 @@ log_features = ['FPR', 'FPLR', 'FTRLR','FLRR','FDiR']
 for df_ in [X]:
     df_[log_features] = np.log1p(df_[log_features])
 
-X_scaled = scaler.transform(X)
+# Conv1D cần đầu vào dạng (N, 8, 1) giống lúc train
+X_scaled = np.expand_dims(scaler.transform(X), axis=-1)
 
 import tensorflow as tf
 import numpy as np
 
 # Load model Keras
-model = tf.keras.models.load_model(
-    "model_cnn_path"
-)
+model = tf.keras.models.load_model(args.model_path)
 
 y_prob = model.predict(X_scaled, batch_size=1024).ravel()
 
@@ -69,7 +79,8 @@ plt.title('ROC Curve')
 plt.legend(loc="lower right")
 plt.grid(alpha=0.3)
 
-plt.show()
+plt.savefig(args.roc_out)
+plt.close()
 
 
 

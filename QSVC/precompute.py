@@ -143,7 +143,7 @@ def main():
     args = parser.parse_args()
 
     # Thiet lap duong dan tuong doi
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     train_path = os.path.join(base_dir, "data", "train", args.dataset_train)
     test_path = os.path.join(base_dir, "data", "test", args.dataset_test)
     
