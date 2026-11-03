@@ -1,5 +1,8 @@
 # Adversarial Robustness of Quantum Learning-based Intrusion Detection Systems in IoT Networks
 
+[![English](https://img.shields.io/badge/English-blue.svg)](README.md)
+[![Vietnamese](https://img.shields.io/badge/Vietnamese-lightgrey.svg)](README.vi.md)
+
 Official implementation and experimental code for the paper:
 > **"Adversarial Robustness of Quantum Learning-based Intrusion Detection Systems in IoT Networks"**  
 > *IEEE ICPADS 2026*  
@@ -53,7 +56,8 @@ We comprehensively evaluate both:
 ├── requirements.txt           # Pinned, tested dependency versions
 ├── LICENSE                    # Apache-2.0 License
 ├── .gitignore
-└── README.md
+├── README.md                  # English version
+└── README.vi.md               # Vietnamese version
 ```
 
 ---
